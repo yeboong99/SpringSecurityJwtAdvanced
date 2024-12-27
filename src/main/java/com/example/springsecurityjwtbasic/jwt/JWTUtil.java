@@ -21,16 +21,21 @@ public class JWTUtil {
         this.secretKey = new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), Jwts.SIG.HS256.key().build().getAlgorithm());
     }
 
-    // username을 검증할 메서드
+    // username을 검증할 때 꺼내기 위한 메서드
     public String getUsername(String token) {
         return Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token).getPayload().get("username", String.class);
         // 문자열에서 헤더 부분을 뜯어 우리가 가진 secretKey와 맞는지(우리 서버에서 생성한 토큰이 맞는지) 검증, 빌더 타입으로 반환한 뒤 클래임을 확인하여 페이로드 부분에 접근. 그곳에서 username을 찾아 String타입으로 반환.
         // * payload 내 담긴 정보들을 claim이라 한다.
     }
 
-    // role을 검증할 메서드
+    // role을 검증할 때 꺼내기 위한 메서드
     public String getRole(String token) {
         return Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token).getPayload().get("role", String.class);
+    }
+
+    // category를 검증할 때 꺼내줄 메서드
+    public String getCategory(String token) {
+        return Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token).getPayload().get("category", String.class);
     }
 
     // 토큰이 만료되었는지 검증할 메서드
@@ -41,8 +46,9 @@ public class JWTUtil {
 
     // 토큰을 생성해줄 메서드
     // username과 role, 토큰이 살아있을 시간(ms)을 인자로 받고 jwt builder를 통해 토큰을 만들어 반환.
-    public String createJwt(String username, String role, Long expiredMs) {
+    public String createJwt(String category, String username, String role, Long expiredMs) {
         return Jwts.builder()
+                .claim("category", category)
                 .claim("username", username) // payload에 넣을 정보 username
                 .claim("role", role)         // payload에 넣을 정보 role
                 .issuedAt(new Date(System.currentTimeMillis())) // 토큰이 발행된 날짜 넣어주기(현재시각)

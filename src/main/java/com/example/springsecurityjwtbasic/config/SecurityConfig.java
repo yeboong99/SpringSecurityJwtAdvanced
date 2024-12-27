@@ -3,6 +3,7 @@ package com.example.springsecurityjwtbasic.config;
 import com.example.springsecurityjwtbasic.jwt.JWTFilter;
 import com.example.springsecurityjwtbasic.jwt.JWTUtil;
 import com.example.springsecurityjwtbasic.jwt.LoginFilter;
+import com.example.springsecurityjwtbasic.repository.RefreshRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -29,6 +30,7 @@ public class SecurityConfig {
     // AuthenticationManager가 인자로 받을 AuthenticationConfiguration 객체 생성자 주입
     private final AuthenticationConfiguration authenticationConfiguration;
     private final JWTUtil jwtUtil;
+    private final RefreshRepository refreshRepository;
 
     @Bean
     public BCryptPasswordEncoder bCryptPasswordEncoder() {
@@ -77,12 +79,13 @@ public class SecurityConfig {
                 .authorizeHttpRequests((auth) -> auth
                         .requestMatchers("/login", "/", "/join").permitAll()
                         .requestMatchers("/admin").hasAnyRole("ADMIN")
+                        .requestMatchers("/reissue").permitAll()    // access 토큰 재발급 경로를 모든 사용자가 접근 가능하도록 설정 추가 (access token이 만료된 상태이므로 로그인 이후 사용가능한 모든 요청이 정상적으로 처리되지 않는다. 토큰 재발급 경로는 모두가 접근할 수 있어야 한다.)
                         .anyRequest().authenticated()); // 그 외 나머지 경로에는(anyRequest()) 로그인 한 사용자만 접근 가능(authenticated())
 
         http
                 .addFilterBefore(new JWTFilter(jwtUtil), LoginFilter.class);   // jwt 필터 위치는 login필터 앞
         http
-                .addFilterAt(new LoginFilter(authenticationManager(authenticationConfiguration), jwtUtil), UsernamePasswordAuthenticationFilter.class);
+                .addFilterAt(new LoginFilter(authenticationManager(authenticationConfiguration), jwtUtil, refreshRepository), UsernamePasswordAuthenticationFilter.class);
 
         // 세션을 STATELESS로 설정 !!가장 중요!!
         http
